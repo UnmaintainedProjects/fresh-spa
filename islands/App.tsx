@@ -1,9 +1,7 @@
 import { IS_BROWSER } from "$fresh/runtime.ts";
-import { useEffect } from "preact/hooks";
 import { Link, Route, Router, Switch, useLocation } from "wouter-preact";
 import staticLocationHook from "wouter-preact/static-location";
 import _404 from "../components/404.tsx";
-import { removeBase } from "../utils.ts";
 
 const navLinks = {
   "/": "Home",
@@ -12,13 +10,19 @@ const navLinks = {
   "/something-strange": "There is 404, too!",
 };
 
-export default function App({ url, path }: { url: string; path: string }) {
-  const [location] = IS_BROWSER ? useLocation() : [path];
+export default function App(
+  { url, base }: { url: string; base?: string },
+) {
+  let location = new URL(url).pathname;
+
+  if (IS_BROWSER) {
+    location = useLocation()[0];
+  }
 
   return (
     <Router
-      base={IS_BROWSER ? "/app" : undefined}
-      hook={IS_BROWSER ? undefined : staticLocationHook(path)}
+      base={base}
+      hook={IS_BROWSER ? undefined : staticLocationHook(location)}
     >
       <header class="w-full relative">
         <div className="absolute w-full bg-fresh opacity-25 h-full z-[-1]">
@@ -26,13 +30,9 @@ export default function App({ url, path }: { url: string; path: string }) {
         <ul class="main flex flex-wrap gap-5">
           {Object.entries(navLinks).map(([k, v]) => (
             <li key={k}>
-              {(IS_BROWSER ? removeBase(location, "/app") : location) == k
+              {(location.slice(base?.length ?? 0) || "/") == k
                 ? <span class="font-bold select-none">{v}</span>
-                : (
-                  <Link class="link" href={k}>
-                    {v}
-                  </Link>
-                )}
+                : <Link class="link" href={k}>{v}</Link>}
             </li>
           ))}
         </ul>
